@@ -36,6 +36,8 @@ jobs:
           projectPath: .
           testMode: editmode
           githubToken: ${{ secrets.GITHUB_TOKEN }}
+          unityUsername: ${{ secrets.UNITY_USERNAME }}
+          unityPassword: ${{ secrets.UNITY_PASSWORD }}
           customParameters: -nographics -batchmode -logFile -
 
       - name: Run tests in Play Mode
