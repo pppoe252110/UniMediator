@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        unityVersion: [6000.5.0b1]  # Use your project's Unity version
+        unityVersion: [6000.0.23f1]  # Use a stable version, not beta
 
     steps:
       - name: Checkout repository
@@ -28,27 +28,30 @@ jobs:
           restore-keys: |
             Library-${{ runner.os }}-${{ matrix.unityVersion }}-
 
-      - name: Run tests in Edit Mode
-        uses: game-ci/unity-test-runner@v4
-        id: editModeTests
+      - name: Activate Unity
+        uses: game-ci/unity-actions/activate@v2
+        with:
+          unityVersion: ${{ matrix.unityVersion }}
+          unityEmail: ${{ secrets.UNITY_EMAIL }}
+          unityPassword: ${{ secrets.UNITY_PASSWORD }}
+
+      - name: Run Edit Mode tests
+        uses: game-ci/unity-actions/test-runner@v2
         with:
           unityVersion: ${{ matrix.unityVersion }}
           projectPath: .
           testMode: editmode
           githubToken: ${{ secrets.GITHUB_TOKEN }}
-          unityUsername: ${{ secrets.UNITY_USERNAME }}
-          unityPassword: ${{ secrets.UNITY_PASSWORD }}
-          customParameters: -nographics -batchmode -logFile -
+          customParameters: -nographics -batchmode
 
-      - name: Run tests in Play Mode
-        uses: game-ci/unity-test-runner@v4
-        id: playModeTests
+      - name: Run Play Mode tests
+        uses: game-ci/unity-actions/test-runner@v2
         with:
           unityVersion: ${{ matrix.unityVersion }}
           projectPath: .
           testMode: playmode
           githubToken: ${{ secrets.GITHUB_TOKEN }}
-          customParameters: -nographics -batchmode -logFile -
+          customParameters: -nographics -batchmode
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
