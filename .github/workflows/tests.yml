@@ -11,6 +11,9 @@ jobs:
   test:
     name: Test Unity ${{ matrix.unityVersion }}
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        unityVersion: [6000.0.23f1]   # Add back matrix definition
 
     steps:
       - name: Checkout repository
@@ -26,17 +29,8 @@ jobs:
           restore-keys: |
             Library-${{ runner.os }}-${{ matrix.unityVersion }}-
 
-      # 🔐 Activate Unity using Personal account credentials
-      - name: Unity - Activate
-        uses: game-ci/unity-activate@v2.0.0
-        with:
-          unityVersion: ${{ matrix.unityVersion }}
-        env:
-          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+      # No separate activation step needed - test runner handles it
 
-      # 🧪 Run Edit Mode tests
       - name: Run Edit Mode tests
         uses: game-ci/unity-test-runner@v4
         with:
@@ -45,8 +39,11 @@ jobs:
           testMode: editmode
           githubToken: ${{ secrets.GITHUB_TOKEN }}
           customParameters: -nographics -batchmode
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
 
-      # 🎮 Run Play Mode tests
       - name: Run Play Mode tests
         uses: game-ci/unity-test-runner@v4
         with:
@@ -55,8 +52,11 @@ jobs:
           testMode: playmode
           githubToken: ${{ secrets.GITHUB_TOKEN }}
           customParameters: -nographics -batchmode
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
 
-      # 📦 Upload test results as artifacts
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
