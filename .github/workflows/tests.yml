@@ -1,0 +1,58 @@
+name: Unity Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Test Unity Project
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        unityVersion: [6000.5.0b1]  # Use your project's Unity version
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Cache Library folder
+        uses: actions/cache@v3
+        with:
+          path: Library
+          key: Library-${{ runner.os }}-${{ matrix.unityVersion }}-${{ hashFiles('Packages/manifest.json') }}
+          restore-keys: |
+            Library-${{ runner.os }}-${{ matrix.unityVersion }}-
+
+      - name: Run tests in Edit Mode
+        uses: game-ci/unity-test-runner@v4
+        id: editModeTests
+        with:
+          unityVersion: ${{ matrix.unityVersion }}
+          projectPath: .
+          testMode: editmode
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          customParameters: -nographics -batchmode -logFile -
+
+      - name: Run tests in Play Mode
+        uses: game-ci/unity-test-runner@v4
+        id: playModeTests
+        with:
+          unityVersion: ${{ matrix.unityVersion }}
+          projectPath: .
+          testMode: playmode
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          customParameters: -nographics -batchmode -logFile -
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Test Results
+          path: |
+            **/test-results/*.xml
+            **/TestResults.xml
