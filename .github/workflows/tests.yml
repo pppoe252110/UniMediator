@@ -11,9 +11,6 @@ jobs:
   test:
     name: Test Unity ${{ matrix.unityVersion }}
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        unityVersion: [6000.0.23f1]   # Use your project's Unity version
 
     steps:
       - name: Checkout repository
