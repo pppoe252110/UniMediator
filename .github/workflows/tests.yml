@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        unityVersion: [6000.0.23f1]   # Add back matrix definition
+        unityVersion: [6000.4.1f1]   # Add back matrix definition
 
     steps:
       - name: Checkout repository
