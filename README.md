@@ -78,14 +78,60 @@ string data = await mediator.Send(new LoadDataRequest());
 UniMediator includes an extension to automate the registration of all handlers within your assembly.
 
 ```csharp
+using System.Linq;
+using UnityEngine;
+using VContainer;
+using VContainer.Unity;
 using UniMediator.Runtime.VContainer;
 
-public class GameLifetimeScope : LifetimeScope
+public class NodeEngineLifetimeScope : LifetimeScope
 {
+    [SerializeField] private ConnectionManager _connectionManager;
+    [SerializeField] private NodeRunner _nodeRunner;
+    [SerializeField] private NodeSpawnerService _nodeSpawnerService;
+    [SerializeField] private GraphSaveLoadCoordinator _graphCoordinator;
+    [SerializeField] private SaveLoadUI _saveLoadUI;
+    [SerializeField] private NodesList _nodesList;
+    [SerializeField] private LineRenderersController _lineRenderersController;
+    [SerializeField] private Canvas _mainCanvas;
+
     protected override void Configure(IContainerBuilder builder)
     {
-        // Automatically finds all handlers in this assembly
-        builder.RegisterMediator();
+        builder.RegisterComponent(_mainCanvas);
+
+        // Register Mediator, ignoring components already registered manually
+        builder.RegisterMediator
+            (
+                options =>
+                    options.Ignore
+                    (
+                        _connectionManager,
+                        _nodeRunner,
+                        _nodeSpawnerService,
+                        _graphCoordinator,
+                        _saveLoadUI,
+                        _nodesList,
+                        _lineRenderersController,
+                        _mainCanvas
+                    )
+            );
+
+        builder.Register<CanvasService>(Lifetime.Singleton);
+        builder.Register<IGraphStorage>(resolver =>
+            new LocalGraphStorage(Application.persistentDataPath + "/NodeGraphs/", ".json"),
+            Lifetime.Singleton);
+
+        builder.Register<GraphSerializer>(Lifetime.Singleton);
+        builder.Register<TypeChangeService>(Lifetime.Singleton);
+        builder.Register<INodeFactory, NodeFactory>(Lifetime.Singleton);
+
+        builder.RegisterComponent(_connectionManager);
+        builder.RegisterComponent(_nodeRunner);
+        builder.RegisterComponent(_nodeSpawnerService);
+        builder.RegisterComponent(_graphCoordinator);
+        builder.RegisterComponent(_saveLoadUI);
+        builder.RegisterComponent(_nodesList);
+        builder.RegisterComponent(_lineRenderersController);
     }
 }
 ```
