@@ -76,54 +76,10 @@ string data = await mediator.Send(new LoadDataRequest());
 
 ## 💉 VContainer Integration
 UniMediator includes an extension to automate the registration of all handlers within your assembly.
-### Step 1: Create the Extension
-Add this utility to your project to enable the `RegisterMediator` syntax:
+
 ```csharp
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using VContainer;
-using VContainer.Unity;
-using UniMediator.Runtime;
+using UniMediator.Runtime.VContainer;
 
-public static class UniMediatorVContainerExtensions
-{
-    public static void RegisterMediator(this IContainerBuilder builder, Assembly assembly = null)
-    {
-        assembly ??= Assembly.GetCallingAssembly();
-
-        // Register Mediator Singleton
-        builder.Register<IMediator>(resolver => new Mediator(
-            type => resolver.Resolve(type),
-            type => (System.Collections.IEnumerable)resolver.Resolve(typeof(IEnumerable<>).MakeGenericType(type))
-        ), Lifetime.Singleton);
-
-        // Scan for Handlers
-        var handlerTypes = new[] { 
-            typeof(IRequestHandler<,>), typeof(IAsyncRequestHandler<,>),
-            typeof(INotificationHandler<>), typeof(IPipelineBehavior<,>) 
-            /* Add others as needed */ 
-        };
-
-        var implementations = assembly.GetTypes()
-            .Where(t => !t.IsAbstract && !t.IsInterface);
-
-        foreach (var type in implementations)
-        {
-            foreach (var iface in type.GetInterfaces().Where(i => i.IsGenericType))
-            {
-                if (handlerTypes.Contains(iface.GetGenericTypeDefinition()))
-                {
-                    builder.Register(type, Lifetime.Transient).As(iface);
-                }
-            }
-        }
-    }
-}
-```
-
-### Step 2: Use in LifetimeScope
-```csharp
 public class GameLifetimeScope : LifetimeScope
 {
     protected override void Configure(IContainerBuilder builder)
