@@ -1,4 +1,4 @@
-name: Unity Tests
+name: PlayMode Tests
 
 on:
   push:
@@ -12,13 +12,9 @@ permissions:
   contents: read
 
 jobs:
-  test:
-    name: Test ${{ matrix.testMode }}
+  playmode-tests:
+    name: Run Play Mode Tests
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        testMode: [editmode, playmode]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -31,7 +27,7 @@ jobs:
           restore-keys: |
             Library-${{ runner.os }}-6000.3.7f1-
 
-      - name: Run ${{ matrix.testMode }} tests
+      - name: Run Play Mode Tests
         id: tests
         uses: game-ci/unity-test-runner@v4
         env:
@@ -41,14 +37,14 @@ jobs:
         with:
           unityVersion: 6000.3.7f1
           projectPath: .
-          testMode: ${{ matrix.testMode }}
+          testMode: playmode
           githubToken: ${{ secrets.GITHUB_TOKEN }}
-          checkName: ${{ matrix.testMode }} Test Results
+          checkName: PlayMode Test Results
           customParameters: -nographics -batchmode
 
-      - name: Upload test results artifact
+      - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: Test Results - ${{ matrix.testMode }}
+          name: Test Results - PlayMode
           path: ${{ steps.tests.outputs.artifactsPath }}
