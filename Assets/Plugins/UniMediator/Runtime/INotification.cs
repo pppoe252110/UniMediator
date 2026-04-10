@@ -12,7 +12,7 @@ namespace UniMediator.Runtime
     /// Defines an asynchronous handler for a notification.
     /// </summary>
     /// <typeparam name="TNotification">The type of notification being handled.</typeparam>
-    public interface INotificationHandler<in TNotification>
+    public interface IAsyncNotificationHandler<in TNotification>
         where TNotification : INotification
     {
         /// <summary>
@@ -21,14 +21,14 @@ namespace UniMediator.Runtime
         /// <param name="notification">The notification instance.</param>
         /// <param name="cancellationToken">Token to cancel the operation.</param>
         /// <returns>A UniTask that completes when the handler finishes.</returns>
-        UniTask Handle(TNotification notification, CancellationToken cancellationToken);
+        UniTask HandleAsync(TNotification notification, CancellationToken cancellationToken);
     }
 
     /// <summary>
     /// Defines a synchronous handler for a notification.
     /// </summary>
     /// <typeparam name="TNotification">The type of notification being handled.</typeparam>
-    public interface ISyncNotificationHandler<in TNotification>
+    public interface INotificationHandler<in TNotification>
         where TNotification : INotification
     {
         /// <summary>

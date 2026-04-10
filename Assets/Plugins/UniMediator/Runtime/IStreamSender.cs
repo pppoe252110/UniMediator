@@ -5,7 +5,7 @@ namespace UniMediator.Runtime
 {
     public interface IStreamSender
     {
-        IUniTaskAsyncEnumerable<TResponse> CreateStream<TResponse>(
+        IUniTaskAsyncEnumerable<TResponse> CreateStreamAsync<TResponse>(
             IStreamRequest<TResponse> request,
             CancellationToken cancellationToken = default);
     }

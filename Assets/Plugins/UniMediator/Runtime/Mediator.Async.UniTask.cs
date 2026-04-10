@@ -53,7 +53,7 @@ namespace UniMediator.Runtime
             return (UniTask)taskObj;
         }
 
-        public UniTask Publish<TNotification>(
+        public UniTask PublishAsync<TNotification>(
             TNotification notification,
             PublishStrategy strategy = PublishStrategy.Sequential,
             CancellationToken cancellationToken = default)
@@ -63,7 +63,7 @@ namespace UniMediator.Runtime
             return (UniTask)taskObj;
         }
 
-        public IUniTaskAsyncEnumerable<TResponse> CreateStream<TResponse>(
+        public IUniTaskAsyncEnumerable<TResponse> CreateStreamAsync<TResponse>(
             IStreamRequest<TResponse> request,
             CancellationToken cancellationToken = default)
         {
@@ -134,7 +134,7 @@ namespace UniMediator.Runtime
             if (notification == null) throw new ArgumentNullException(nameof(notification));
 
             var notificationType = typeof(TNotification);
-            var handlerType = typeof(INotificationHandler<>).MakeGenericType(notificationType);
+            var handlerType = typeof(IAsyncNotificationHandler<>).MakeGenericType(notificationType);
 
             var handlers = _multiResolver(handlerType)?.OfType<object>().ToArray()
                 ?? Array.Empty<object>();
@@ -274,7 +274,7 @@ namespace UniMediator.Runtime
 
         private static Func<object, object, CancellationToken, UniTask> CreateUniTaskNotificationHandlerInvoker(Type notificationType)
         {
-            var handlerType = typeof(INotificationHandler<>).MakeGenericType(notificationType);
+            var handlerType = typeof(IAsyncNotificationHandler<>).MakeGenericType(notificationType);
 
             var handlerParam = Expression.Parameter(typeof(object), "handler");
             var notificationParam = Expression.Parameter(typeof(object), "notification");
@@ -283,7 +283,7 @@ namespace UniMediator.Runtime
             var castHandler = Expression.Convert(handlerParam, handlerType);
             var castNotification = Expression.Convert(notificationParam, notificationType);
 
-            var method = handlerType.GetMethod("Handle", new[] { notificationType, typeof(CancellationToken) });
+            var method = handlerType.GetMethod("HandleAsync", new[] { notificationType, typeof(CancellationToken) });
             var call = Expression.Call(castHandler, method, castNotification, ctParam);
 
             return Expression.Lambda<Func<object, object, CancellationToken, UniTask>>(

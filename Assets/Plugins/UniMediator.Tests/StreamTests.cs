@@ -37,7 +37,7 @@ namespace UniMediator.Tests
             Register<IStreamHandler<StreamRequest, int>>(new StreamHandler());
 
             var results = new List<int>();
-            var stream = Mediator.CreateStream(new StreamRequest { Count = 3 });
+            var stream = Mediator.CreateStreamAsync(new StreamRequest { Count = 3 });
 
             await foreach (var item in stream)
                 results.Add(item);
@@ -54,7 +54,7 @@ namespace UniMediator.Tests
             cts.CancelAfter(25); // Cancel after ~25ms (before all 5 items complete)
 
             var results = new List<int>();
-            var stream = Mediator.CreateStream(new StreamRequest { Count = 5 }, cts.Token);
+            var stream = Mediator.CreateStreamAsync(new StreamRequest { Count = 5 }, cts.Token);
 
             try
             {
@@ -72,13 +72,13 @@ namespace UniMediator.Tests
         [Test]
         public void CreateStream_ThrowsIfHandlerNotFound()
         {
-            Assert.Throws<InvalidOperationException>(() => Mediator.CreateStream(new StreamRequest()));
+            Assert.Throws<InvalidOperationException>(() => Mediator.CreateStreamAsync(new StreamRequest()));
         }
 
         [Test]
         public void CreateStream_ThrowsIfRequestNull()
         {
-            Assert.Throws<ArgumentNullException>(() => Mediator.CreateStream<int>(null));
+            Assert.Throws<ArgumentNullException>(() => Mediator.CreateStreamAsync<int>(null));
         }
     }
 }

@@ -113,13 +113,13 @@ namespace UniMediator.Runtime
 
         #region Synchronous Publish
 
-        public void PublishSync<TNotification>(TNotification notification)
+        public void Publish<TNotification>(TNotification notification)
             where TNotification : INotification
         {
             if (notification == null) throw new ArgumentNullException(nameof(notification));
 
             var notificationType = typeof(TNotification);
-            var handlerType = typeof(ISyncNotificationHandler<>).MakeGenericType(notificationType);
+            var handlerType = typeof(INotificationHandler<>).MakeGenericType(notificationType);
 
             var handlers = _multiResolver(handlerType)?.OfType<object>().ToArray()
                 ?? Array.Empty<object>();
@@ -227,7 +227,7 @@ namespace UniMediator.Runtime
 
         private static Action<object, object> CreateSyncNotificationHandlerInvoker(Type notificationType)
         {
-            var handlerType = typeof(ISyncNotificationHandler<>).MakeGenericType(notificationType);
+            var handlerType = typeof(INotificationHandler<>).MakeGenericType(notificationType);
 
             var handlerParam = Expression.Parameter(typeof(object), "handler");
             var notificationParam = Expression.Parameter(typeof(object), "notification");

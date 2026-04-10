@@ -1,6 +1,6 @@
 namespace UniMediator.Runtime
 {
-    public interface IMediator : ISender, IPublisher, ISyncPublisher, IStreamSender
+    public interface IMediator : ISender, IAsyncPublisher, IPublisher, IStreamSender
     {
     }
 }

@@ -25,7 +25,7 @@ namespace UniMediator.Runtime.VContainer
             {
                 typeof(IRequestHandler<,>), typeof(IAsyncRequestHandler<,>),
                 typeof(IRequestHandler<>), typeof(IAsyncRequestHandler<>),
-                typeof(INotificationHandler<>), typeof(ISyncNotificationHandler<>),
+                typeof(IAsyncNotificationHandler<>), typeof(INotificationHandler<>),
                 typeof(IStreamHandler<,>), typeof(IPipelineBehavior<,>),
                 typeof(IAsyncPipelineBehavior<,>)
             };

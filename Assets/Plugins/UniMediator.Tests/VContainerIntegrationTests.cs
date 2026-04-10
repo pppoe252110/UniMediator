@@ -33,10 +33,10 @@ namespace UniMediator.Examples.Tests
         }
 
         public class TestNotification : INotification { public string Message { get; set; } }
-        public class TestNotificationHandler : INotificationHandler<TestNotification>
+        public class TestNotificationHandler : IAsyncNotificationHandler<TestNotification>
         {
             public List<string> Received { get; } = new();
-            public UniTask Handle(TestNotification notification, CancellationToken token)
+            public UniTask HandleAsync(TestNotification notification, CancellationToken token)
             {
                 Received.Add(notification.Message);
                 return UniTask.CompletedTask;
@@ -74,7 +74,7 @@ namespace UniMediator.Examples.Tests
             builder.Register<TestAsyncHandler>(Lifetime.Transient)
                    .As<IAsyncRequestHandler<TestAsyncRequest, int>>();
             builder.Register<TestNotificationHandler>(Lifetime.Singleton)
-                   .As<INotificationHandler<TestNotification>>();
+                   .As<IAsyncNotificationHandler<TestNotification>>();
 
             // Pipeline behaviors (commented out by default to keep sync test clean)
             // Uncomment for pipeline tests
@@ -128,10 +128,10 @@ namespace UniMediator.Examples.Tests
         public IEnumerator Publish_Notification_InvokesHandler()
         {
             var mediator = _container.Resolve<IMediator>();
-            var handler = _container.Resolve<INotificationHandler<TestNotification>>() as TestNotificationHandler;
+            var handler = _container.Resolve<IAsyncNotificationHandler<TestNotification>>() as TestNotificationHandler;
             var notification = new TestNotification { Message = "TestMessage" };
 
-            yield return mediator.Publish(notification).ToCoroutine();
+            yield return mediator.PublishAsync(notification).ToCoroutine();
 
             Assert.That(handler.Received, Does.Contain("TestMessage"));
         }

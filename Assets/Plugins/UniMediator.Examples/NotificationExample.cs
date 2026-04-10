@@ -14,27 +14,27 @@ namespace UniMediator.Examples
     }
 
     // Handlers (async)
-    public class UIDeathHandler : INotificationHandler<PlayerDiedNotification>
+    public class UIDeathHandler : IAsyncNotificationHandler<PlayerDiedNotification>
     {
-        public async UniTask Handle(PlayerDiedNotification notification, CancellationToken token)
+        public async UniTask HandleAsync(PlayerDiedNotification notification, CancellationToken token)
         {
             await UniTask.Delay(100, cancellationToken: token);
             Debug.Log($"UI: Show death screen for {notification.PlayerName}");
         }
     }
 
-    public class AudioDeathHandler : INotificationHandler<PlayerDiedNotification>
+    public class AudioDeathHandler : IAsyncNotificationHandler<PlayerDiedNotification>
     {
-        public async UniTask Handle(PlayerDiedNotification notification, CancellationToken token)
+        public async UniTask HandleAsync(PlayerDiedNotification notification, CancellationToken token)
         {
             Debug.Log($"Audio: Play death sound at {notification.DeathPosition}");
             await UniTask.CompletedTask;
         }
     }
 
-    public class AnalyticsDeathHandler : INotificationHandler<PlayerDiedNotification>
+    public class AnalyticsDeathHandler : IAsyncNotificationHandler<PlayerDiedNotification>
     {
-        public async UniTask Handle(PlayerDiedNotification notification, CancellationToken token)
+        public async UniTask HandleAsync(PlayerDiedNotification notification, CancellationToken token)
         {
             await UniTask.Delay(50);
             Debug.Log($"Analytics: Log death event for {notification.PlayerName}");
@@ -58,9 +58,9 @@ namespace UniMediator.Examples
                 services[t].Add(instance);
             }
 
-            Add<INotificationHandler<PlayerDiedNotification>>(new UIDeathHandler());
-            Add<INotificationHandler<PlayerDiedNotification>>(new AudioDeathHandler());
-            Add<INotificationHandler<PlayerDiedNotification>>(new AnalyticsDeathHandler());
+            Add<IAsyncNotificationHandler<PlayerDiedNotification>>(new UIDeathHandler());
+            Add<IAsyncNotificationHandler<PlayerDiedNotification>>(new AudioDeathHandler());
+            Add<IAsyncNotificationHandler<PlayerDiedNotification>>(new AnalyticsDeathHandler());
 
             _mediator = new Mediator(
                 resolver: t => services.TryGetValue(t, out var list) && list.Count > 0 ? list[0] : null,
@@ -77,10 +77,10 @@ namespace UniMediator.Examples
             };
 
             Debug.Log("Publishing sequential...");
-            await _mediator.Publish(notification, PublishStrategy.Sequential);
+            await _mediator.PublishAsync(notification, PublishStrategy.Sequential);
 
             Debug.Log("Publishing parallel...");
-            await _mediator.Publish(notification, PublishStrategy.Parallel);
+            await _mediator.PublishAsync(notification, PublishStrategy.Parallel);
         }
     }
 }

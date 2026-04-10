@@ -67,7 +67,7 @@ namespace UniMediator.Examples
             _cts.CancelAfter(2000);
 
             var request = new ChatStreamRequest { Channel = "General", MaxMessages = 10 };
-            var stream = _mediator.CreateStream(request, _cts.Token);
+            var stream = _mediator.CreateStreamAsync(request, _cts.Token);
 
             try
             {
