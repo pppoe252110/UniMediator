@@ -1,0 +1,26 @@
+{
+    "name": "com.pppoe252110.unimediator",
+    "version": "1.0.0",
+    "displayName": "UniMediator",
+    "description": "High-performance Mediator pattern implementation for Unity with UniTask support.",
+    "unity": "6000.3.7f1",
+    "dependencies": {
+      "com.cysharp.unitask": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask"
+    },
+    "keywords": [
+      "mediator",
+      "cqs",
+      "unitask",
+      "async",
+      "messaging"
+    ],
+    "author": {
+      "name": "pppoe252110",
+      "email": "pppoe252110@gmail.com",
+      "url": "https://github.com/pppoe252110/UniMediator"
+    },
+    "type": "library",
+    "documentationUrl": "https://github.com/pppoe252110/UniMediator/blob/main/README.md",
+    "license": "MIT",
+    "licensesUrl": "https://github.com/pppoe252110/UniMediator/blob/main/LICENSE"
+  }
