@@ -1,8 +1,9 @@
-﻿#if UNIMEDIATOR_VCONTAINER_INTEGRATION
+#if UNIMEDIATOR_VCONTAINER_INTEGRATION
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 using VContainer;
 
 namespace UniMediator.Runtime.VContainer
@@ -41,6 +42,7 @@ namespace UniMediator.Runtime.VContainer
             // 3. Scan and register, skipping ignored types
             var implementations = assembly.GetTypes()
                 .Where(t => t is { IsAbstract: false, IsInterface: false })
+                .Where(t => !typeof(MonoBehaviour).IsAssignableFrom(t))
                 .Where(t => !ignoreSet.Contains(t));
 
             foreach (var type in implementations)
