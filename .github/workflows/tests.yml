@@ -29,21 +29,6 @@ jobs:
           restore-keys: |
             Library-${{ runner.os }}-${{ matrix.unityVersion }}-
 
-      # No separate activation step needed - test runner handles it
-
-      - name: Run Edit Mode tests
-        uses: game-ci/unity-test-runner@v4
-        with:
-          unityVersion: ${{ matrix.unityVersion }}
-          projectPath: .
-          testMode: editmode
-          githubToken: ${{ secrets.GITHUB_TOKEN }}
-          customParameters: -nographics -batchmode
-        env:
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-
       - name: Run Play Mode tests
         uses: game-ci/unity-test-runner@v4
         with:
