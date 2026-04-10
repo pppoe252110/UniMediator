@@ -4,9 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using VContainer;
-using UniMediator.Runtime;
 
-namespace UniMediator.Examples
+namespace UniMediator.Runtime.VContainer
 {
     public static class UniMediatorVContainerExtensions
     {

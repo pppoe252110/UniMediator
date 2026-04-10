@@ -2,6 +2,7 @@
 
 using VContainer;
 using VContainer.Unity;
+using UniMediator.Runtime.VContainer;
 
 namespace UniMediator.Examples
 {

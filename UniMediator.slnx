@@ -1,30 +1,19 @@
 ﻿<Solution>
   <Project Path="Unity.InputSystem.csproj" />
-  <Project Path="Unity.Mathematics.csproj" />
-  <Project Path="Unity.Collections.csproj" />
-  <Project Path="Unity.PerformanceTesting.Editor.csproj" />
   <Project Path="UniTask.csproj" />
-  <Project Path="Unity.Searcher.Editor.csproj" />
-  <Project Path="Unity.Burst.csproj" />
   <Project Path="VContainer.csproj" />
   <Project Path="Unity.VisualStudio.Editor.csproj" />
   <Project Path="Unity.Rider.Editor.csproj" />
-  <Project Path="Unity.Burst.CodeGen.csproj" />
-  <Project Path="Unity.PerformanceTesting.csproj" />
   <Project Path="UniTask.Linq.csproj" />
-  <Project Path="Unity.Burst.Editor.csproj" />
   <Project Path="VContainer.Editor.csproj" />
   <Project Path="UniMediator.Runtime.csproj" />
   <Project Path="UniMediator.Tests.csproj" />
   <Project Path="Unity.InputSystem.DocCodeSamples.csproj" />
   <Project Path="UniMediator.Examples.csproj" />
   <Project Path="Unity.InputSystem.ForUI.csproj" />
-  <Project Path="Unity.Collections.CodeGen.csproj" />
-  <Project Path="Unity.Mathematics.Editor.csproj" />
   <Project Path="UniTask.TextMeshPro.csproj" />
   <Project Path="Unity.InputSystem.TestFramework.csproj" />
   <Project Path="UniTask.Addressables.csproj" />
   <Project Path="UniTask.Editor.csproj" />
-  <Project Path="Unity.Collections.Editor.csproj" />
   <Project Path="UniTask.DOTween.csproj" />
 </Solution>
