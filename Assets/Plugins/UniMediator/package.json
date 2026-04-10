@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "displayName": "UniMediator",
     "description": "High-performance Mediator pattern implementation for Unity with UniTask support.",
-    "unity": "6000.3.7f1",
+    "unity": "2018.4",
     "dependencies": {
       "com.cysharp.unitask": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask"
     },
