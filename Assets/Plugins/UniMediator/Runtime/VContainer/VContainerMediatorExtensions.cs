@@ -9,18 +9,26 @@ namespace UniMediator.Runtime.VContainer
 {
     public static class UniMediatorVContainerExtensions
     {
-        public static void RegisterMediator(this IContainerBuilder builder)
+        /// <summary>
+        /// Registers Mediator and scans the calling assembly for handlers.
+        /// </summary>
+        /// <param name="builder">The container builder.</param>
+        /// <param name="configure">Optional configuration action.</param>
+        public static void RegisterMediator(this IContainerBuilder builder, Action<MediatorRegistrationOptions> configure = null)
         {
-            // Use the assembly where the LifetimeScope is defined
-            var assembly = System.Reflection.Assembly.GetCallingAssembly();
+            var options = new MediatorRegistrationOptions();
+            configure?.Invoke(options);
 
-            // 1. Register the Mediator
+            var assembly = System.Reflection.Assembly.GetCallingAssembly();
+            var ignoreSet = options.IgnoredTypes;
+
+            // 1. Register the Mediator itself
             builder.Register<IMediator>(resolver => new Mediator(
                 type => resolver.Resolve(type),
                 type => (IEnumerable<object>)resolver.Resolve(typeof(IEnumerable<>).MakeGenericType(type))
             ), Lifetime.Singleton);
 
-            // 2. Define the target interfaces
+            // 2. Target open generic interfaces
             var targetOpenGenerics = new HashSet<Type>
             {
                 typeof(IRequestHandler<,>), typeof(IAsyncRequestHandler<,>),
@@ -30,9 +38,10 @@ namespace UniMediator.Runtime.VContainer
                 typeof(IAsyncPipelineBehavior<,>)
             };
 
-            // 3. Scan and Register
+            // 3. Scan and register, skipping ignored types
             var implementations = assembly.GetTypes()
-                .Where(t => t is { IsAbstract: false, IsInterface: false });
+                .Where(t => t is { IsAbstract: false, IsInterface: false })
+                .Where(t => !ignoreSet.Contains(t));
 
             foreach (var type in implementations)
             {
