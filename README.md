@@ -103,7 +103,10 @@ UniMediator includes an extension to automate the registration of all handlers w
         builder.RegisterComponent(_graphCoordinator);
         builder.RegisterComponent(_saveLoadUI);
         builder.RegisterComponent(_nodesList);
-        builder.RegisterComponent(_lineRenderersController).AsImplementedInterfaces();
+
+        builder.RegisterComponent(_lineRenderersController).AsImplementedInterfaces(); //Use AsImplementedInterfaces();
+        //public class LineRenderersController : MonoBehaviour, INotificationHandler<ConnectionChangedNotification>
+
         builder.RegisterComponent(_UIZoomPan);
     }
 ```
