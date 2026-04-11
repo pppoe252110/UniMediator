@@ -26,9 +26,13 @@ It supports synchronous and asynchronous workflows, notification broadcasting, d
 * [VContainer](https://github.com/hadashiA/VContainer) (Optional, for DI)
 
 ### Setup
+Via git URL:
+```url
+https://github.com/pppoe252110/UniMediator.git?path=Assets/Plugins/UniMediator
+```
+Manual:
 1.  Download the source or clone the repo.
 2.  Place the `UniMediator` folder into your Unity `Assets` or `Packages` directory.
-3.  **If using VContainer:** Add `UNIMEDIATOR_VCONTAINER_INTEGRATION` to your **Project Settings > Player > Scripting Define Symbols**.
 
 ---
 
