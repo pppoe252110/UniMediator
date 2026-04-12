@@ -22,7 +22,7 @@ It supports synchronous and asynchronous workflows, notification broadcasting, d
 ## 📦 Installation
 
 ### Dependencies
-* [UniTask](https://github.com/Cysharp/UniTask) (Required)
+* [UniTask](https://github.com/Cysharp/UniTask) (Optional, for Async)
 * [VContainer](https://github.com/hadashiA/VContainer) (Optional, for DI)
 
 ### Setup
