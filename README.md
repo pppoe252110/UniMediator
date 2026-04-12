@@ -75,7 +75,75 @@ int health = mediator.Send(new HealRequest { Amount = 20 });
 // Send an async request
 string data = await mediator.SendAsync(new LoadDataRequest());
 ```
+### 4. Stream Example (Async Enumerable)
 
+Streams allow a handler to yield multiple values over time using `IUniTaskAsyncEnumerable`.  
+This is ideal for live data feeds, chat messages, or progressive downloads.
+
+```csharp
+// Request definition
+public class ChatStreamRequest : IStreamRequest<ChatMessage>
+{
+    public string Channel;
+    public int MaxMessages = 5;
+}
+
+public class ChatMessage
+{
+    public string Sender;
+    public string Text;
+}
+
+// Handler that simulates receiving messages
+public class ChatStreamHandler : IStreamHandler<ChatStreamRequest, ChatMessage>
+{
+    public IUniTaskAsyncEnumerable<ChatMessage> Handle(ChatStreamRequest request, CancellationToken token)
+    {
+        return UniTaskAsyncEnumerable.Create<ChatMessage>(async (writer, ct) =>
+        {
+            for (int i = 0; i < request.MaxMessages; i++)
+            {
+                await UniTask.Delay(500, cancellationToken: ct); // Simulate network latency
+                await writer.YieldAsync(new ChatMessage
+                {
+                    Sender = $"User{i}",
+                    Text = $"Hello from {request.Channel} #{i}"
+                });
+            }
+        });
+    }
+}
+```
+
+**Consuming the Stream:**
+```csharp
+public class ChatConsumer : MonoBehaviour
+{
+    private IMediator _mediator;
+    private CancellationTokenSource _cts;
+
+    private async void Start()
+    {
+        _cts = new CancellationTokenSource();
+        var request = new ChatStreamRequest { Channel = "General", MaxMessages = 5 };
+        var stream = _mediator.CreateStreamAsync(request, _cts.Token);
+
+        try
+        {
+            await foreach (var message in stream.WithCancellation(_cts.Token))
+            {
+                Debug.Log($"[{message.Sender}]: {message.Text}");
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            Debug.Log("Stream cancelled.");
+        }
+    }
+
+    private void OnDestroy() => _cts?.Dispose();
+}
+```
 ---
 
 ## 💉 VContainer Integration
