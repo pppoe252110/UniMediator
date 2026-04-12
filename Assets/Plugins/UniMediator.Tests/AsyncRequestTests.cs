@@ -1,4 +1,5 @@
-﻿using Cysharp.Threading.Tasks;
+﻿#if UNIMEDIATOR_UNITASK_INTEGRATION 
+using Cysharp.Threading.Tasks;
 using NUnit.Framework;
 using System;
 using System.Threading;
@@ -122,3 +123,4 @@ namespace UniMediator.Tests
         }
     }
 }
+#endif

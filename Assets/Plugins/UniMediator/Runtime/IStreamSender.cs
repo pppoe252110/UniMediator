@@ -1,4 +1,5 @@
-﻿using Cysharp.Threading.Tasks;
+﻿#if UNIMEDIATOR_UNITASK_INTEGRATION
+using Cysharp.Threading.Tasks;
 using System.Threading;
 
 namespace UniMediator.Runtime
@@ -10,3 +11,4 @@ namespace UniMediator.Runtime
             CancellationToken cancellationToken = default);
     }
 }
+#endif

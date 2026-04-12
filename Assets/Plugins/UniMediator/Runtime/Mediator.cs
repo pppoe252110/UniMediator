@@ -17,11 +17,11 @@ namespace UniMediator.Runtime
         private readonly Func<Type, IEnumerable<object>> _multiResolver;
 
         // --- Synchronous caches ---
-        private static readonly ConcurrentDictionary<Type, Lazy<Action<object, object>>> _syncVoidCache = new();
-        private static readonly ConcurrentDictionary<Type, Lazy<Func<object, object, object, object>>> _syncPipelineBehaviorInvokerCache = new();
-        private static readonly ConcurrentDictionary<Type, Lazy<Action<object, object>>> _syncNotificationHandlerInvokerCache = new();
+        private static readonly ConcurrentDictionary<Type, Lazy<Action<object, object>>> _voidCache = new();
+        private static readonly ConcurrentDictionary<Type, Lazy<Func<object, object, object, object>>> _pipelineBehaviorInvokerCache = new();
+        private static readonly ConcurrentDictionary<Type, Lazy<Action<object, object>>> _notificationHandlerInvokerCache = new();
 
-        // --- Boxing‑free synchronous request wrapper cache ---
+        // --- Synchronous request wrapper cache ---
         private static readonly ConcurrentDictionary<Type, object> _syncRequestWrapperCache = new();
 
         public Mediator(Func<Type, object> resolver) : this(resolver, null) { }
@@ -36,7 +36,7 @@ namespace UniMediator.Runtime
             });
         }
 
-        #region Boxing‑free Synchronous Request Handler Wrapper
+        #region Synchronous Request Handler Wrapper
 
         private interface IRequestHandlerWrapper<TResponse>
         {
@@ -73,7 +73,7 @@ namespace UniMediator.Runtime
             var handler = _resolver(handlerType)
                 ?? throw new InvalidOperationException($"Handler not registered for {requestType.Name}");
 
-            var behaviors = ResolveSyncBehaviors(requestType, responseType).Cast<object>().ToList();
+            var behaviors = ResolveBehaviors(requestType, responseType).Cast<object>().ToList();
 
             // Use the boxing‑free wrapper for the final handler invocation
             var wrapperType = typeof(RequestHandlerWrapper<,>).MakeGenericType(requestType, responseType);
@@ -87,7 +87,7 @@ namespace UniMediator.Runtime
             foreach (var behaviorObj in behaviors.Reverse<object>())
             {
                 var next = handlerDelegate;
-                var invoker = GetSyncPipelineBehaviorInvoker(behaviorObj.GetType(), requestType, responseType);
+                var invoker = GetPipelineBehaviorInvoker(behaviorObj.GetType(), requestType, responseType);
                 handlerDelegate = () => (TResponse)invoker(behaviorObj, request, next);
             }
 
@@ -104,8 +104,8 @@ namespace UniMediator.Runtime
             var handler = _resolver(handlerType)
                 ?? throw new InvalidOperationException($"Handler not registered for {requestType.Name}");
 
-            var invoker = _syncVoidCache.GetOrAdd(handlerType,
-                new Lazy<Action<object, object>>(() => CreateSyncVoidInvoker(handlerType))).Value;
+            var invoker = _voidCache.GetOrAdd(handlerType,
+                new Lazy<Action<object, object>>(() => CreateVoidInvoker(handlerType))).Value;
             invoker(handler, request);
         }
 
@@ -126,15 +126,15 @@ namespace UniMediator.Runtime
 
             if (handlers.Length == 0) return;
 
-            var invoker = GetSyncNotificationHandlerInvoker(notificationType);
+            var invoker = GetNotificationHandlerInvoker(notificationType);
             foreach (var handler in handlers)
                 invoker(handler, notification);
         }
 
         #endregion
 
-        #region Async Method Signatures (implemented in partial files)
-
+        #region Async Method Signatures
+#if UNIMEDIATOR_UNITASK_INTEGRATION
         private partial void SendAsyncCore<TResponse>(
             IAsyncRequest<TResponse> request,
             CancellationToken cancellationToken,
@@ -156,28 +156,29 @@ namespace UniMediator.Runtime
             IStreamRequest<TResponse> request,
             CancellationToken cancellationToken,
             out object asyncEnumerable);
-
+#endif
         #endregion
 
         #region Pipeline Resolution Helpers
 
-        private IEnumerable<object> ResolveSyncBehaviors(Type requestType, Type responseType)
+        private IEnumerable<object> ResolveBehaviors(Type requestType, Type responseType)
         {
             var behaviorType = typeof(IPipelineBehavior<,>).MakeGenericType(requestType, responseType);
             return _multiResolver(behaviorType) ?? Enumerable.Empty<object>();
         }
 
+#if UNIMEDIATOR_UNITASK_INTEGRATION
         private IEnumerable<object> ResolveAsyncBehaviors(Type requestType, Type responseType)
         {
             var behaviorType = typeof(IAsyncPipelineBehavior<,>).MakeGenericType(requestType, responseType);
             return _multiResolver(behaviorType) ?? Enumerable.Empty<object>();
         }
-
+#endif
         #endregion
 
         #region Sync Invoker Builders (Expression Trees)
 
-        private static Action<object, object> CreateSyncVoidInvoker(Type handlerType)
+        private static Action<object, object> CreateVoidInvoker(Type handlerType)
         {
             var args = handlerType.GetGenericArguments();
             var requestType = args[0];
@@ -195,7 +196,7 @@ namespace UniMediator.Runtime
                 call, handlerParam, requestParam).Compile();
         }
 
-        private static Func<object, object, object, object> CreateSyncPipelineBehaviorInvoker(
+        private static Func<object, object, object, object> CreatePipelineBehaviorInvoker(
             Type behaviorType, Type requestType, Type responseType)
         {
             var delegateType = typeof(RequestHandlerDelegateSync<>).MakeGenericType(responseType);
@@ -216,16 +217,16 @@ namespace UniMediator.Runtime
                 castResult, behaviorParam, requestParam, nextParam).Compile();
         }
 
-        private Func<object, object, object, object> GetSyncPipelineBehaviorInvoker(
+        private Func<object, object, object, object> GetPipelineBehaviorInvoker(
             Type behaviorType, Type requestType, Type responseType)
         {
-            var lazy = _syncPipelineBehaviorInvokerCache.GetOrAdd(behaviorType,
+            var lazy = _pipelineBehaviorInvokerCache.GetOrAdd(behaviorType,
                 new Lazy<Func<object, object, object, object>>(() =>
-                    CreateSyncPipelineBehaviorInvoker(behaviorType, requestType, responseType)));
+                    CreatePipelineBehaviorInvoker(behaviorType, requestType, responseType)));
             return lazy.Value;
         }
 
-        private static Action<object, object> CreateSyncNotificationHandlerInvoker(Type notificationType)
+        private static Action<object, object> CreateNotificationHandlerInvoker(Type notificationType)
         {
             var handlerType = typeof(INotificationHandler<>).MakeGenericType(notificationType);
 
@@ -241,10 +242,10 @@ namespace UniMediator.Runtime
             return Expression.Lambda<Action<object, object>>(call, handlerParam, notificationParam).Compile();
         }
 
-        private static Action<object, object> GetSyncNotificationHandlerInvoker(Type notificationType)
+        private static Action<object, object> GetNotificationHandlerInvoker(Type notificationType)
         {
-            return _syncNotificationHandlerInvokerCache.GetOrAdd(notificationType,
-                new Lazy<Action<object, object>>(() => CreateSyncNotificationHandlerInvoker(notificationType))).Value;
+            return _notificationHandlerInvokerCache.GetOrAdd(notificationType,
+                new Lazy<Action<object, object>>(() => CreateNotificationHandlerInvoker(notificationType))).Value;
         }
 
         #endregion

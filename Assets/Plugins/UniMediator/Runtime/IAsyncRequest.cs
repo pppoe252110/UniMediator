@@ -1,3 +1,4 @@
+#if UNIMEDIATOR_UNITASK_INTEGRATION
 using Cysharp.Threading.Tasks;
 using System.Threading;
 
@@ -18,3 +19,4 @@ namespace UniMediator.Runtime
         UniTask<TResponse> Handle(TRequest request, CancellationToken cancellationToken);
     }
 }
+#endif

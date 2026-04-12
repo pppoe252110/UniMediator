@@ -22,6 +22,11 @@
             "name": "jp.hadashikick.vcontainer",
             "expression": "",
             "define": "UNIMEDIATOR_VCONTAINER_INTEGRATION"
+        },
+        {
+            "name": "com.cysharp.unitask",
+            "expression": "",
+            "define": "UNIMEDIATOR_UNITASK_INTEGRATION"
         }
     ],
     "noEngineReferences": false

@@ -1,3 +1,4 @@
+#if UNIMEDIATOR_UNITASK_INTEGRATION
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
@@ -84,3 +85,4 @@ namespace UniMediator.Examples
         }
     }
 }
+#endif

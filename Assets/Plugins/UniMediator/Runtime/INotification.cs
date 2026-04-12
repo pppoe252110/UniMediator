@@ -1,4 +1,6 @@
-﻿using Cysharp.Threading.Tasks;
+﻿#if UNIMEDIATOR_UNITASK_INTEGRATION
+using Cysharp.Threading.Tasks;
+#endif
 using System.Threading;
 
 namespace UniMediator.Runtime
@@ -8,6 +10,7 @@ namespace UniMediator.Runtime
     /// </summary>
     public interface INotification { }
 
+#if UNIMEDIATOR_UNITASK_INTEGRATION
     /// <summary>
     /// Defines an asynchronous handler for a notification.
     /// </summary>
@@ -23,7 +26,7 @@ namespace UniMediator.Runtime
         /// <returns>A UniTask that completes when the handler finishes.</returns>
         UniTask HandleAsync(TNotification notification, CancellationToken cancellationToken);
     }
-
+#endif
     /// <summary>
     /// Defines a synchronous handler for a notification.
     /// </summary>

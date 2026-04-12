@@ -1,4 +1,6 @@
-﻿using Cysharp.Threading.Tasks;
+﻿#if UNIMEDIATOR_UNITASK_INTEGRATION
+using Cysharp.Threading.Tasks;
+#endif
 using NUnit.Framework;
 using System.Collections.Generic;
 using System.Threading;
@@ -10,6 +12,8 @@ namespace UniMediator.Tests
     [TestFixture]
     public class PipelineBehaviorTests : MediatorTestBase
     {
+        #if UNIMEDIATOR_UNITASK_INTEGRATION
+
         // Async types
         public class AsyncPing : IAsyncRequest<string> { public string Message { get; set; } }
         public class AsyncPingHandler : IAsyncRequestHandler<AsyncPing, string>
@@ -34,7 +38,7 @@ namespace UniMediator.Tests
             }
 
         }
-
+#endif
         // Sync types
         public class SyncPing : IRequest<string> { public string Message { get; set; } }
         public class SyncPingHandler : IRequestHandler<SyncPing, string>
@@ -53,6 +57,7 @@ namespace UniMediator.Tests
             }
         }
 
+#if UNIMEDIATOR_UNITASK_INTEGRATION
         [Test]
         public async Task AsyncPipelineBehavior_WrapsHandler_ModifiesResponse()
         {
@@ -82,7 +87,7 @@ namespace UniMediator.Tests
             // Two behaviors produce four log entries total
             Assert.AreEqual(4, behavior1.Logs.Count + behavior2.Logs.Count);
         }
-
+#endif
         [Test]
         public void SyncPipelineBehavior_WrapsHandler_ModifiesResponse()
         {

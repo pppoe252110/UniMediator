@@ -1,6 +1,6 @@
 {
     "name": "com.pppoe252110.unimediator",
-    "version": "1.1.1",
+    "version": "1.1.2",
     "displayName": "UniMediator",
     "description": "High-performance Mediator pattern implementation for Unity with UniTask support.",
     "unity": "2018.4",

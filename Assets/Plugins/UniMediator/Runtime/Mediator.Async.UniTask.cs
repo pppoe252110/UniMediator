@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if UNIMEDIATOR_UNITASK_INTEGRATION
+using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Linq.Expressions;
@@ -318,3 +319,4 @@ namespace UniMediator.Runtime
         #endregion
     }
 }
+#endif

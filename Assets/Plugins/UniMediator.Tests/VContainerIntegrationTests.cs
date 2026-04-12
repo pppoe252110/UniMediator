@@ -2,7 +2,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
+#if UNIMEDIATOR_UNITASK_INTEGRATION
 using Cysharp.Threading.Tasks;
+#endif
 using NUnit.Framework;
 using UniMediator.Runtime;
 using UnityEngine.TestTools;
@@ -22,7 +24,9 @@ namespace UniMediator.Examples.Tests
             public string Handle(TestSyncRequest request) => $"Sync: {request.Input}";
         }
 
+#if UNIMEDIATOR_UNITASK_INTEGRATION
         public class TestAsyncRequest : IAsyncRequest<int> { public int Value { get; set; } }
+
         public class TestAsyncHandler : IAsyncRequestHandler<TestAsyncRequest, int>
         {
             public async UniTask<int> Handle(TestAsyncRequest request, CancellationToken token)
@@ -31,7 +35,6 @@ namespace UniMediator.Examples.Tests
                 return request.Value * 2;
             }
         }
-
         public class TestNotification : INotification { public string Message { get; set; } }
         public class TestNotificationHandler : IAsyncNotificationHandler<TestNotification>
         {
@@ -42,6 +45,7 @@ namespace UniMediator.Examples.Tests
                 return UniTask.CompletedTask;
             }
         }
+#endif
 
         // Sync pipeline behavior (registered only when needed)
         public class UpperCaseBehavior : IPipelineBehavior<TestSyncRequest, string>
@@ -50,6 +54,7 @@ namespace UniMediator.Examples.Tests
                 => next().ToUpperInvariant();
         }
 
+#if UNIMEDIATOR_UNITASK_INTEGRATION
         // Async pipeline behavior
         public class LoggingAsyncBehavior : IAsyncPipelineBehavior<TestAsyncRequest, int>
         {
@@ -62,7 +67,7 @@ namespace UniMediator.Examples.Tests
                 return result;
             }
         }
-
+#endif
         [SetUp]
         public void SetUp()
         {
@@ -71,11 +76,13 @@ namespace UniMediator.Examples.Tests
             // Core handlers
             builder.Register<TestSyncHandler>(Lifetime.Transient)
                    .As<IRequestHandler<TestSyncRequest, string>>();
+#if UNIMEDIATOR_UNITASK_INTEGRATION
+
             builder.Register<TestAsyncHandler>(Lifetime.Transient)
                    .As<IAsyncRequestHandler<TestAsyncRequest, int>>();
             builder.Register<TestNotificationHandler>(Lifetime.Singleton)
                    .As<IAsyncNotificationHandler<TestNotification>>();
-
+#endif
             // Pipeline behaviors (commented out by default to keep sync test clean)
             // Uncomment for pipeline tests
             // builder.Register<UpperCaseBehavior>(Lifetime.Transient)
@@ -112,6 +119,7 @@ namespace UniMediator.Examples.Tests
             Assert.That(result, Is.EqualTo("Sync: hello"));
         }
 
+#if UNIMEDIATOR_UNITASK_INTEGRATION
         [UnityTest]
         public IEnumerator Send_AsyncRequest_ReturnsExpectedResponse()
         {
@@ -135,7 +143,7 @@ namespace UniMediator.Examples.Tests
 
             Assert.That(handler.Received, Does.Contain("TestMessage"));
         }
-
+#endif
         [Test]
         public void Send_SyncRequest_ThrowsIfHandlerNotRegistered()
         {
@@ -181,6 +189,7 @@ namespace UniMediator.Examples.Tests
             Assert.That(result, Is.EqualTo("SYNC: HELLO"));
         }
 
+#if UNIMEDIATOR_UNITASK_INTEGRATION
         [UnityTest]
         public IEnumerator AsyncPipelineBehavior_IsAppliedAndLogs()
         {
@@ -210,6 +219,7 @@ namespace UniMediator.Examples.Tests
             Assert.That(loggingBehavior.Logs[0], Is.EqualTo("Before: 7"));
             Assert.That(loggingBehavior.Logs[1], Is.EqualTo("After: 14"));
         }
+#endif
     }
 }
 #endif

@@ -1,4 +1,5 @@
-﻿using Cysharp.Threading.Tasks;
+﻿#if UNIMEDIATOR_UNITASK_INTEGRATION
+using Cysharp.Threading.Tasks;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
@@ -8,6 +9,7 @@ using UniMediator.Runtime;
 
 namespace UniMediator.Tests
 {
+
     [TestFixture]
     public class NotificationTests : MediatorTestBase
     {
@@ -21,7 +23,6 @@ namespace UniMediator.Tests
                 ReceivedMessages.Add(notification.Message);
             }
         }
-
         [Test]
         public async Task Publish_Sequential_AllHandlersInvoked()
         {
@@ -63,3 +64,5 @@ namespace UniMediator.Tests
         }
     }
 }
+
+#endif

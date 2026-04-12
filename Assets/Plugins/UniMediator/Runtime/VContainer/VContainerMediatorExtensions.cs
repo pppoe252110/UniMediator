@@ -32,11 +32,17 @@ namespace UniMediator.Runtime.VContainer
             // 2. Target open generic interfaces
             var targetOpenGenerics = new HashSet<Type>
             {
-                typeof(IRequestHandler<,>), typeof(IAsyncRequestHandler<,>),
-                typeof(IRequestHandler<>), typeof(IAsyncRequestHandler<>),
-                typeof(IAsyncNotificationHandler<>), typeof(INotificationHandler<>),
-                typeof(IStreamHandler<,>), typeof(IPipelineBehavior<,>),
+                typeof(IRequestHandler<,>),
+                typeof(IRequestHandler<>),
+                typeof(IPipelineBehavior<,>),
+                typeof(INotificationHandler<>),
+#if UNIMEDIATOR_UNITASK_INTEGRATION
+                typeof(IStreamHandler<,>),
+                typeof(IAsyncRequestHandler<,>),
+                typeof(IAsyncRequestHandler<>),
+                typeof(IAsyncNotificationHandler<>),
                 typeof(IAsyncPipelineBehavior<,>)
+#endif
             };
 
             // 3. Scan and register, skipping ignored types
