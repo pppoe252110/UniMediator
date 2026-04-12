@@ -73,44 +73,79 @@ public class LoadDataHandler : IAsyncRequestHandler<LoadDataRequest, string>
 int health = mediator.Send(new HealRequest { Amount = 20 });
 
 // Send an async request
-string data = await mediator.Send(new LoadDataRequest());
+string data = await mediator.SendAsync(new LoadDataRequest());
 ```
 
 ---
 
 ## 💉 VContainer Integration
-UniMediator includes an extension to automate the registration of all handlers within your assembly.
+
+UniMediator includes an extension to automate the registration of all standard class handlers (POCOs) in your assembly. For **MonoBehaviours** already existing in your scene, you should register them manually using `AsImplementedInterfaces()`.
+
+### 1. Example Handler (MonoBehaviour)
+This component lives on a VFX Manager object in your scene. It listens for a "Player Hit" notification to trigger visual effects.
 
 ```csharp
+public class PlayerHitNotification : INotification 
+{
+    public Vector3 HitPosition;
+}
+
+public class PlayerVFXManager : MonoBehaviour, INotificationHandler<PlayerHitNotification>
+{
+    [SerializeField] private ParticleSystem _bloodSplatPrefab;
+
+    public void Handle(PlayerHitNotification notification)
+    {
+        Instantiate(_bloodSplatPrefab, notification.HitPosition, Quaternion.identity);
+    }
+}
+```
+
+### 2. Registration in LifetimeScope
+Call RegisterMediator() to scan the assembly for standard handlers, then register your scene components specifically.
+
+```csharp
+using VContainer;
+using VContainer.Unity;
+using UniMediator.Runtime.VContainer;
+
+public class GameAppScope : LifetimeScope
+{
+    [SerializeField] private PlayerVFXManager _vfxManager;
+
     protected override void Configure(IContainerBuilder builder)
     {
-        builder.RegisterComponent(_mainCanvas);
+        // 1. Register the Mediator & scan assembly for POCO handlers
+        builder.RegisterMediator();
 
-        // Register Mediator, ignoring components already registered manually
-        builder.RegisterMediator(options =>
-            options.Ignore(_mainCanvas));
+        // 2. Register your game services
+        builder.Register<CombatService>(Lifetime.Singleton);
 
-        builder.Register<CanvasService>(Lifetime.Singleton);
-        builder.Register<IGraphStorage>(resolver =>
-            new LocalGraphStorage(Application.persistentDataPath + "/NodeGraphs/", ".json"),
-            Lifetime.Singleton);
-
-        builder.Register<GraphSerializer>(Lifetime.Singleton);
-        builder.Register<TypeChangeService>(Lifetime.Singleton);
-        builder.Register<INodeFactory, NodeFactory>(Lifetime.Singleton);
-
-        RegisterAllNodeTypes(builder);
-
-        builder.RegisterComponent(_connectionManager);
-        builder.RegisterComponent(_nodeRunner);
-        builder.RegisterComponent(_nodeSpawnerService);
-        builder.RegisterComponent(_graphCoordinator);
-        builder.RegisterComponent(_saveLoadUI);
-        builder.RegisterComponent(_nodesList);
-
-        builder.RegisterComponent(_lineRenderersController).AsImplementedInterfaces(); //Use AsImplementedInterfaces();
-        //public class LineRenderersController : MonoBehaviour, INotificationHandler<ConnectionChangedNotification>
-
-        builder.RegisterComponent(_UIZoomPan);
+        // 3. Register scene-based handlers
+        // Use AsImplementedInterfaces() so the Mediator finds the INotificationHandler
+        builder.RegisterComponent(_vfxManager)
+               .AsImplementedInterfaces();
     }
+}
+```
+
+### 3. Usage
+
+```csharp
+public class CombatService
+{
+    private readonly IMediator _mediator;
+
+    // Injected by VContainer
+    public CombatService(IMediator mediator) => _mediator = mediator;
+
+    public void DealDamage(Vector3 position)
+    {
+        // ... damage logic ...
+
+        // Trigger VFX via Mediator
+        _mediator.Publish(new PlayerHitNotification { HitPosition = position });
+    }
+}
 ```
