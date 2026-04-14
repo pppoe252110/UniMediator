@@ -19,6 +19,17 @@ It supports synchronous and asynchronous workflows, notification broadcasting, d
 
 ---
 
+## ⚡ Performance
+
+UniMediator is built for high‑frequency game logic with **zero allocations** for struct requests and sub‑millisecond overhead for async operations.
+
+| Operation                           | Avg Time (Editor) | Allocations (per call) |
+|-------------------------------------|-------------------|------------------------|
+| **Synchronous Send** (100k calls)   | 3.8 µs            | 0 bytes                |
+| **Asynchronous Send** (10k calls)   | 828 µs            | 0 bytes                |
+
+---
+
 ## 📦 Installation
 
 ### Dependencies
