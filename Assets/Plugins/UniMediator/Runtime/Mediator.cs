@@ -18,11 +18,13 @@ namespace UniMediator.Runtime
 
         // --- Synchronous caches ---
         private static readonly ConcurrentDictionary<Type, Lazy<Action<object, object>>> _voidCache = new();
-        private static readonly ConcurrentDictionary<Type, Lazy<Func<object, object, object, object>>> _pipelineBehaviorInvokerCache = new();
         private static readonly ConcurrentDictionary<Type, Lazy<Action<object, object>>> _notificationHandlerInvokerCache = new();
 
-        // --- Synchronous request wrapper cache ---
-        private static readonly ConcurrentDictionary<Type, object> _syncRequestWrapperCache = new();
+        // Cache for compiled behavior invokers (used during pipeline build)
+        private static readonly ConcurrentDictionary<(Type BehaviorType, Type RequestType, Type ResponseType), Delegate> _behaviorInvokerCache = new();
+
+        // Instance cache for compiled Send<TResponse> pipeline delegates
+        private readonly ConcurrentDictionary<(Type RequestType, Type ResponseType), Delegate> _sendPipelineCache = new();
 
         public Mediator(Func<Type, object> resolver) : this(resolver, null) { }
 
@@ -68,30 +70,95 @@ namespace UniMediator.Runtime
 
             var requestType = request.GetType();
             var responseType = typeof(TResponse);
-            var handlerType = typeof(IRequestHandler<,>).MakeGenericType(requestType, responseType);
+            var key = (RequestType: requestType, ResponseType: responseType);
 
-            var handler = _resolver(handlerType)
+            var pipeline = _sendPipelineCache.GetOrAdd(key, _ =>
+            {
+                return BuildSendPipelineDelegate<TResponse>(requestType, responseType, this);
+            });
+
+            var func = (Func<IRequest<TResponse>, TResponse>)pipeline;
+            return func(request);
+        }
+
+        private static Delegate BuildSendPipelineDelegate<TResponse>(
+            Type requestType,
+            Type responseType,
+            Mediator mediator)
+        {
+            var handlerType = typeof(IRequestHandler<,>).MakeGenericType(requestType, responseType);
+            var behaviorType = typeof(IPipelineBehavior<,>).MakeGenericType(requestType, responseType);
+
+            // Resolve handler once (must exist)
+            var handler = mediator._resolver(handlerType)
                 ?? throw new InvalidOperationException($"Handler not registered for {requestType.Name}");
 
-            var behaviors = ResolveBehaviors(requestType, responseType).Cast<object>().ToList();
+            // Resolve behaviors once
+            var behaviors = mediator._multiResolver(behaviorType)?.ToArray() ?? Array.Empty<object>();
 
-            // Use the boxing‑free wrapper for the final handler invocation
+            // Create wrapper for boxing‑free handler call
             var wrapperType = typeof(RequestHandlerWrapper<,>).MakeGenericType(requestType, responseType);
-            var wrapper = (IRequestHandlerWrapper<TResponse>)_syncRequestWrapperCache.GetOrAdd(wrapperType,
-                _ => Activator.CreateInstance(wrapperType));
+            var wrapper = Activator.CreateInstance(wrapperType);
+            var handleMethod = wrapperType.GetMethod("Handle");
 
-            RequestHandlerDelegateSync<TResponse> handlerDelegate = () =>
-                wrapper.Handle(request, handler);
+            // Compile a delegate for the base handler invocation
+            var requestParam = Expression.Parameter(typeof(IRequest<TResponse>), "request");
+            var handlerCall = Expression.Call(
+                Expression.Constant(wrapper),
+                handleMethod,
+                requestParam,
+                Expression.Constant(handler));
+            var baseHandlerFunc = Expression.Lambda<Func<IRequest<TResponse>, TResponse>>(
+                handlerCall, requestParam).Compile();
 
-            // Apply pipeline behaviors (these still use object casting; see note below)
-            foreach (var behaviorObj in behaviors.Reverse<object>())
+            // Build pipeline by wrapping with behaviors
+            Func<IRequest<TResponse>, TResponse> pipelineFunc = baseHandlerFunc;
+
+            for (int i = behaviors.Length - 1; i >= 0; i--)
             {
-                var next = handlerDelegate;
-                var invoker = GetPipelineBehaviorInvoker(behaviorObj.GetType(), requestType, responseType);
-                handlerDelegate = () => (TResponse)invoker(behaviorObj, request, next);
+                var behavior = behaviors[i];
+                pipelineFunc = CreateBehaviorWrapper(requestType, responseType, behavior, pipelineFunc);
             }
 
-            return handlerDelegate();
+            return pipelineFunc;
+        }
+
+        private static Func<IRequest<TResponse>, TResponse> CreateBehaviorWrapper<TResponse>(
+            Type requestType,
+            Type responseType,
+            object behavior,
+            Func<IRequest<TResponse>, TResponse> next)
+        {
+            var behaviorType = behavior.GetType();
+            var key = (BehaviorType: behaviorType, RequestType: requestType, ResponseType: responseType);
+
+            // Get or create a compiled invoker for this behavior type
+            var invoker = (Func<object, IRequest<TResponse>, RequestHandlerDelegateSync<TResponse>, TResponse>)
+                _behaviorInvokerCache.GetOrAdd(key, _ =>
+                {
+                    return CompileBehaviorInvoker<TResponse>(requestType, responseType, behaviorType);
+                });
+
+            return request => invoker(behavior, request, () => next(request));
+        }
+
+        private static Func<object, IRequest<TResponse>, RequestHandlerDelegateSync<TResponse>, TResponse>
+            CompileBehaviorInvoker<TResponse>(Type requestType, Type responseType, Type behaviorType)
+        {
+            var behaviorParam = Expression.Parameter(typeof(object), "behavior");
+            var requestParam = Expression.Parameter(typeof(IRequest<TResponse>), "request");
+            var nextParam = Expression.Parameter(typeof(RequestHandlerDelegateSync<TResponse>), "next");
+
+            var castBehavior = Expression.Convert(behaviorParam, behaviorType);
+            var castRequest = Expression.Convert(requestParam, requestType);
+
+            var method = behaviorType.GetMethod("Handle", new[] { requestType, typeof(RequestHandlerDelegateSync<TResponse>) });
+            var call = Expression.Call(castBehavior, method, castRequest, nextParam);
+
+            var lambda = Expression.Lambda<Func<object, IRequest<TResponse>, RequestHandlerDelegateSync<TResponse>, TResponse>>(
+                call, behaviorParam, requestParam, nextParam);
+
+            return lambda.Compile();
         }
 
         public void Send(IRequest request)
@@ -159,23 +226,6 @@ namespace UniMediator.Runtime
 #endif
         #endregion
 
-        #region Pipeline Resolution Helpers
-
-        private IEnumerable<object> ResolveBehaviors(Type requestType, Type responseType)
-        {
-            var behaviorType = typeof(IPipelineBehavior<,>).MakeGenericType(requestType, responseType);
-            return _multiResolver(behaviorType) ?? Enumerable.Empty<object>();
-        }
-
-#if UNIMEDIATOR_UNITASK_INTEGRATION
-        private IEnumerable<object> ResolveAsyncBehaviors(Type requestType, Type responseType)
-        {
-            var behaviorType = typeof(IAsyncPipelineBehavior<,>).MakeGenericType(requestType, responseType);
-            return _multiResolver(behaviorType) ?? Enumerable.Empty<object>();
-        }
-#endif
-        #endregion
-
         #region Sync Invoker Builders (Expression Trees)
 
         private static Action<object, object> CreateVoidInvoker(Type handlerType)
@@ -194,36 +244,6 @@ namespace UniMediator.Runtime
 
             return Expression.Lambda<Action<object, object>>(
                 call, handlerParam, requestParam).Compile();
-        }
-
-        private static Func<object, object, object, object> CreatePipelineBehaviorInvoker(
-            Type behaviorType, Type requestType, Type responseType)
-        {
-            var delegateType = typeof(RequestHandlerDelegateSync<>).MakeGenericType(responseType);
-
-            var behaviorParam = Expression.Parameter(typeof(object), "behavior");
-            var requestParam = Expression.Parameter(typeof(object), "request");
-            var nextParam = Expression.Parameter(typeof(object), "next");
-
-            var castBehavior = Expression.Convert(behaviorParam, behaviorType);
-            var castRequest = Expression.Convert(requestParam, requestType);
-            var castNext = Expression.Convert(nextParam, delegateType);
-
-            var method = behaviorType.GetMethod("Handle", new[] { requestType, delegateType });
-            var call = Expression.Call(castBehavior, method, castRequest, castNext);
-            var castResult = Expression.Convert(call, typeof(object));
-
-            return Expression.Lambda<Func<object, object, object, object>>(
-                castResult, behaviorParam, requestParam, nextParam).Compile();
-        }
-
-        private Func<object, object, object, object> GetPipelineBehaviorInvoker(
-            Type behaviorType, Type requestType, Type responseType)
-        {
-            var lazy = _pipelineBehaviorInvokerCache.GetOrAdd(behaviorType,
-                new Lazy<Func<object, object, object, object>>(() =>
-                    CreatePipelineBehaviorInvoker(behaviorType, requestType, responseType)));
-            return lazy.Value;
         }
 
         private static Action<object, object> CreateNotificationHandlerInvoker(Type notificationType)

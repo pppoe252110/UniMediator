@@ -1,10 +1,11 @@
 ﻿#if UNIMEDIATOR_UNITASK_INTEGRATION
+using Cysharp.Threading.Tasks;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
-using Cysharp.Threading.Tasks;
 
 namespace UniMediator.Runtime
 {
@@ -316,6 +317,11 @@ namespace UniMediator.Runtime
                 call, handlerParam, requestParam, ctParam).Compile();
         }
 
+        private IEnumerable<object> ResolveAsyncBehaviors(Type requestType, Type responseType)
+        {
+            var behaviorType = typeof(IAsyncPipelineBehavior<,>).MakeGenericType(requestType, responseType);
+            return _multiResolver(behaviorType) ?? Enumerable.Empty<object>();
+        }
         #endregion
     }
 }
