@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using UnityEngine;
 using VContainer;
 
@@ -11,7 +12,7 @@ namespace UniMediator.Runtime.VContainer
     public static class UniMediatorVContainerExtensions
     {
         /// <summary>
-        /// Registers Mediator and scans the calling assembly for handlers.
+        /// Registers Mediator and scans the specified assemblies for handlers.
         /// </summary>
         /// <param name="builder">The container builder.</param>
         /// <param name="configure">Optional configuration action.</param>
@@ -20,8 +21,13 @@ namespace UniMediator.Runtime.VContainer
             var options = new MediatorRegistrationOptions();
             configure?.Invoke(options);
 
-            var assembly = System.Reflection.Assembly.GetCallingAssembly();
+            // Determine which assemblies to scan
+            var assemblies = options.AssembliesToScan.Count > 0
+                ? options.AssembliesToScan
+                : new HashSet<Assembly> { Assembly.GetCallingAssembly() };
+
             var ignoreSet = options.IgnoredTypes;
+            var defaultLifetime = options.DefaultLifetime;
 
             // 1. Register the Mediator itself
             builder.Register<IMediator>(resolver => new Mediator(
@@ -45,8 +51,9 @@ namespace UniMediator.Runtime.VContainer
 #endif
             };
 
-            // 3. Scan and register, skipping ignored types
-            var implementations = assembly.GetTypes()
+            // 3. Scan and register across all specified assemblies, skipping ignored types
+            var implementations = assemblies
+                .SelectMany(asm => asm.GetTypes())
                 .Where(t => t is { IsAbstract: false, IsInterface: false })
                 .Where(t => !typeof(MonoBehaviour).IsAssignableFrom(t))
                 .Where(t => !ignoreSet.Contains(t));
@@ -57,7 +64,7 @@ namespace UniMediator.Runtime.VContainer
                 {
                     if (targetOpenGenerics.Contains(iface.GetGenericTypeDefinition()))
                     {
-                        builder.Register(type, Lifetime.Transient).As(iface);
+                        builder.Register(type, defaultLifetime).As(iface);
                     }
                 }
             }
